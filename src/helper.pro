@@ -31,7 +31,6 @@ CONFIG(debug, debug|release) {
 SRCDIR ~= s,/,$$QMAKE_DIR_SEP,g
 DSTDIR ~= s,/,$$QMAKE_DIR_SEP,g
 
-QMAKE_POST_LINK += mkdir -p $$quote($$DSTDIR) $$escape_expand(\\n)
 QMAKE_POST_LINK += xcopy /y /I $$quote($$SRCDIR\\helper*.exe) $$quote($$DSTDIR) $$escape_expand(\\n)
 
 SOURCES += main.cpp \
