@@ -67,7 +67,11 @@ std::wstring ToWString(const QString &source)
 
 QString ToQString(const std::wstring &source)
 {
+#if QT_VERSION >= QT_VERSION_CHECK(5,0,0)
+  return QString::fromWCharArray(source.c_str());
+#else
   return QString::fromUtf16(source.c_str());
+#endif
 }
 
 
