@@ -14,29 +14,24 @@ QT       -= gui
 CONFIG   += console
 CONFIG   -= app_bundle
 
-SOURCES += main.cpp \
+!include(../LocalPaths.pri) {
+  message("paths to required libraries need to be set up in LocalPaths.pri")
+}
+
+SOURCES += \
+    main.cpp \
     privileges.cpp
 
 HEADERS += \
     privileges.h
 
-DEFINES += UNICODE \
+DEFINES += \
+    UNICODE \
     _UNICODE \
     _CRT_SECURE_NO_WARNINGS
 
-QMAKE_LFLAGS += /MANIFESTUAC:\"level=\'requireAdministrator\' uiAccess=\'false\'\"
+QMAKE_LFLAGS += /MANIFESTUAC:"level=\'requireAdministrator\'uiAccess=\'false\'"
 
 LIBS += -ladvapi32
-
-CONFIG(debug, debug|release) {
-  SRCDIR = $$OUT_PWD/debug
-  DSTDIR = $$PWD/../../outputd
-} else {
-  SRCDIR = $$OUT_PWD/release
-  DSTDIR = $$PWD/../../output
-}
-
-SRCDIR ~= s,/,$$QMAKE_DIR_SEP,g
-DSTDIR ~= s,/,$$QMAKE_DIR_SEP,g
 
 QMAKE_POST_LINK += xcopy /y /I $$quote($$SRCDIR\\helper*.exe) $$quote($$DSTDIR) $$escape_expand(\\n)
