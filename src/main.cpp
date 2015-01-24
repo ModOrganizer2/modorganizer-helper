@@ -31,29 +31,6 @@ along with Mod Organizer.  If not, see <http://www.gnu.org/licenses/>.
 #pragma comment(linker, "/manifestDependency:\"name='dlls' processorArchitecture='x86' version='1.0.0.0' type='win32' \"")
 
 
-static bool handleNXM(const QString &mopath, bool activate)
-{
-  QSettings handlerReg("HKEY_CLASSES_ROOT\\nxm\\",
-                       QSettings::NativeFormat);
-
-  if (activate) {
-    QString myExe = QDir::toNativeSeparators(QString("\"%1/ModOrganizer.exe\"").arg(mopath)).append(" \"%1\"");
-    handlerReg.setValue("Default", "URL:NXM Protocol");
-    handlerReg.setValue("URL Protocol", "");
-    handlerReg.setValue("shell/open/command/Default", myExe);
-  } else {
-    handlerReg.setValue("shell/open/command/Default", "");
-  }
-  handlerReg.sync();
-  if (handlerReg.status() != QSettings::NoError) {
-    qCritical("failed to write to registry (%d)", handlerReg.status());
-    return false;
-  }
-  qDebug("error: %d", handlerReg.status());
-  return true;
-}
-
-
 std::wstring ToWString(const QString &source)
 {
   wchar_t *buffer = new wchar_t[source.count() + 1];
@@ -73,7 +50,6 @@ QString ToQString(const std::wstring &source)
   return QString::fromUtf16(source.c_str());
 #endif
 }
-
 
 
 static bool createMODirectory(const QString &directoryName, const std::wstring &accountName)
@@ -166,19 +142,6 @@ int mainDelegate(int argc, wchar_t **argv)
     qDebug("init: %ls - %ls", argv[2], argv[3]);
     // set up mod organizer directory
     if (!init(ToQString(argv[2]), argv[3])) {
-      return -2;
-    }
-  } else if (wcscmp(argv[1], L"handleNXM") == 0) {
-    if (argc < 4) {
-      qCritical("Invalid number of parameters");
-      return -1;
-    }
-    // activate or deactivate global nxm handler
-    bool activate = wcstoul(argv[3], nullptr, 10) != 0;
-
-    qDebug("nxm-handler: %ls - %s", argv[2], activate ? "activate" : "deactivate");
-
-    if (!handleNXM(ToQString(argv[2]), activate)) {
       return -2;
     }
   } else if (wcscmp(argv[1], L"backdateBSA") == 0) {
