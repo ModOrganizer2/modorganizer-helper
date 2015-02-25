@@ -90,7 +90,7 @@ BOOL SetOwner(LPCTSTR filename, LPCTSTR newOwner)
     // filename parameter for SetNamedSecurityInfo isn't const
     // which is odd since it is documented to be a input parameter...
     TCHAR *fileNameBuf = new TCHAR[32768];
-    wcsncpy(fileNameBuf, filename, 32768);
+    wcsncpy_s(fileNameBuf, 32768, filename, 32768);
     // Set the owner on the file and give him full access
     secRes = SetNamedSecurityInfo(
         fileNameBuf, SE_FILE_OBJECT,
