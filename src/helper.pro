@@ -35,3 +35,6 @@ QMAKE_LFLAGS += /MANIFESTUAC:"level=\'requireAdministrator\'uiAccess=\'false\'"
 LIBS += -ladvapi32
 
 QMAKE_POST_LINK += xcopy /y /I $$quote($$SRCDIR\\helper*.exe) $$quote($$DSTDIR) $$escape_expand(\\n)
+
+OTHER_FILES +=\
+    SConscript

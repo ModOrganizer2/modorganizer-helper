@@ -1,0 +1,36 @@
+Import('qt_env')
+
+env = qt_env.Clone()
+
+modules = [
+    'Core',
+]
+
+env.EnableQt4Modules(['Qt' + n for n in modules],
+                     debug = env['CONFIG'] == 'debug')
+
+env.AppendUnique(CPPDEFINES = [
+    '_UNICODE',
+    '_CRT_SECURE_NO_WARNINGS'
+])
+
+env.AppendUnique(LIBS = 'advapi32')
+
+env['WINDOWS_EMBED_MANIFEST'] = True
+
+env.AppendUnique(LINKFLAGS = [
+    '/SUBSYSTEM:CONSOLE',
+    '/MANIFESTUAC:"level=\'requireAdministrator\'uiAccess=\'false\'"',
+    '${EXE_MANIFEST_DEPENDENCY}'
+])
+
+prog = env.Program('helper', env.Glob('*.cpp'))
+# FIXME scons doesn't realise the linker provides a pdb for executable.
+if env['CONFIG'] == 'debug':
+    x = env.File('helper.pdb')
+    env.Depends(x, prog)
+    prog.append(x)
+env.Depends(prog, env.Value(env['ENV']['DLLSPATH']))
+
+env.Install(env['INSTALL_PATH'],
+            filter(lambda x: str(x).endswith('.exe') or str(x).endswith('.pdb'), prog))
