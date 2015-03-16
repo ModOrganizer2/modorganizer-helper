@@ -27,6 +27,4 @@ env.AppendUnique(LINKFLAGS = [
 
 prog = env.Program('helper', env.Glob('*.cpp'))
 
-env.Install(env['INSTALL_PATH'],
-            filter(lambda x: str(x).endswith('.exe') or str(x).endswith('.pdb'),
-                   prog))
+env.InstallModule(prog)
