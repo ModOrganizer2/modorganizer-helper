@@ -2,12 +2,7 @@ Import('qt_env')
 
 env = qt_env.Clone()
 
-modules = [
-    'Core',
-]
-
-env.EnableQt4Modules(['Qt' + n for n in modules],
-                     debug = env['CONFIG'] == 'debug')
+env.EnableQtModules('Core')
 
 env.AppendUnique(CPPDEFINES = [
     '_UNICODE',
