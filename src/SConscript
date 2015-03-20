@@ -23,3 +23,6 @@ env.AppendUnique(LINKFLAGS = [
 prog = env.Program('helper', env.Glob('*.cpp'))
 
 env.InstallModule(prog)
+
+res = env['QT_USED_MODULES']
+Return('res')
