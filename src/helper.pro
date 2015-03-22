@@ -13,6 +13,8 @@ QT       -= gui
 
 CONFIG   += console
 CONFIG   -= app_bundle
+CONFIG += embed_manifest_exe
+
 
 !include(../LocalPaths.pri) {
   message("paths to required libraries need to be set up in LocalPaths.pri")
@@ -30,7 +32,8 @@ DEFINES += \
     _UNICODE \
     _CRT_SECURE_NO_WARNINGS
 
-QMAKE_LFLAGS += /MANIFESTUAC:"level=\'requireAdministrator\'uiAccess=\'false\'"
+#QMAKE_LFLAGS += /MANIFESTUAC:"level=\'requireAdministrator\'uiAccess=\'false\'"
+QMAKE_LFLAGS += /MANIFESTUAC:\"level=\'requireAdministrator\' uiAccess=\'false\'\"
 
 LIBS += -ladvapi32
 
