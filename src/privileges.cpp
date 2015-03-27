@@ -13,7 +13,7 @@ BOOL SetPrivilege(HANDLE token, LPCWSTR privilege, BOOL enable)
   LUID luid;
 
   // get the local id of the privilege
-  if (!LookupPrivilegeValue(NULL, privilege, &luid)) {
+  if (!LookupPrivilegeValue(nullptr, privilege, &luid)) {
     qCritical("failed to look up privilege %ls: %lu",
               privilege, ::GetLastError());
     return FALSE;
@@ -30,8 +30,8 @@ BOOL SetPrivilege(HANDLE token, LPCWSTR privilege, BOOL enable)
 
   // change the privilege
   if (!AdjustTokenPrivileges(token, FALSE, &tokenPriv,
-         sizeof(TOKEN_PRIVILEGES), (PTOKEN_PRIVILEGES)NULL,
-         (PDWORD)NULL)) {
+         sizeof(TOKEN_PRIVILEGES), (PTOKEN_PRIVILEGES)nullptr,
+         (PDWORD)nullptr)) {
     qCritical("failed to adjust privilege %ls: %lu",
               privilege, ::GetLastError());
     return FALSE;
@@ -49,9 +49,9 @@ BOOL SetPrivilege(HANDLE token, LPCWSTR privilege, BOOL enable)
 
 BOOL SetOwner(LPCTSTR filename, LPCTSTR newOwner)
 {
-  PSID sid = NULL;
+  PSID sid = nullptr;
   BOOL res = TRUE;
-  PACL pacl = NULL;
+  PACL pacl = nullptr;
 
   // get the SID for the new owner
   TCHAR domainUnused[4096];
@@ -59,10 +59,10 @@ BOOL SetOwner(LPCTSTR filename, LPCTSTR newOwner)
   DWORD domainBufSize = 4096;
   SID_NAME_USE sidUse;
   // pre-flight to determine required size of the sid
-  LookupAccountName(NULL, newOwner, NULL, &sidSize, domainUnused, &domainBufSize, &sidUse);
+  LookupAccountName(nullptr, newOwner, nullptr, &sidSize, domainUnused, &domainBufSize, &sidUse);
   sid = (PSID)malloc(sidSize);
   // determine sid for account name
-  if (!LookupAccountName(NULL, newOwner, sid, &sidSize, domainUnused, &domainBufSize, &sidUse)) {
+  if (!LookupAccountName(nullptr, newOwner, sid, &sidSize, domainUnused, &domainBufSize, &sidUse)) {
     qCritical("failed to look up account name: %ls", newOwner);
     res = FALSE;
   } else {
@@ -80,7 +80,7 @@ BOOL SetOwner(LPCTSTR filename, LPCTSTR newOwner)
     access.Trustee.TrusteeType = TRUSTEE_IS_GROUP;
     access.Trustee.ptstrName = (LPTSTR)sid;
 
-    DWORD secRes = SetEntriesInAcl(1, &access, NULL, &pacl);
+    DWORD secRes = SetEntriesInAcl(1, &access, nullptr, &pacl);
     if (secRes != ERROR_SUCCESS) {
       qCritical("failed to set up acls: %lu", secRes);
       return FALSE;
@@ -90,12 +90,12 @@ BOOL SetOwner(LPCTSTR filename, LPCTSTR newOwner)
     // filename parameter for SetNamedSecurityInfo isn't const
     // which is odd since it is documented to be a input parameter...
     TCHAR *fileNameBuf = new TCHAR[32768];
-    wcsncpy(fileNameBuf, filename, 32768);
+    wcsncpy_s(fileNameBuf, 32768, filename, 32768);
     // Set the owner on the file and give him full access
     secRes = SetNamedSecurityInfo(
         fileNameBuf, SE_FILE_OBJECT,
         OWNER_SECURITY_INFORMATION | DACL_SECURITY_INFORMATION,
-        sid, NULL, pacl, NULL);
+        sid, nullptr, pacl, nullptr);
 
     delete [] fileNameBuf;
     if (secRes != NOERROR) {
@@ -104,7 +104,7 @@ BOOL SetOwner(LPCTSTR filename, LPCTSTR newOwner)
     }
   }
 
-  if (sid != NULL) {
+  if (sid != nullptr) {
     free(sid);
   }
 

@@ -100,7 +100,7 @@ static bool backdateBSAs(const QString &dataPath)
     iter.next();
 
     HANDLE file = ::CreateFileW(ToWString(iter.filePath()).c_str(), GENERIC_READ | GENERIC_WRITE,
-                               0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+                               0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (file == INVALID_HANDLE_VALUE) {
       qCritical("failed to open %s: errorcode %d", iter.filePath().toUtf8().constData(), ::GetLastError());
       return false;
@@ -114,7 +114,7 @@ static bool backdateBSAs(const QString &dataPath)
     newWriteTime.dwLowDateTime  = (DWORD)(temp & 0xFFFFFFFF);
     newWriteTime.dwHighDateTime = (DWORD)(temp >> 32);
 
-    if (!::SetFileTime(file, NULL, NULL, &newWriteTime)) {
+    if (!::SetFileTime(file, nullptr, nullptr, &newWriteTime)) {
       qCritical("failed to change date for %s: errorcode %d", iter.filePath().toUtf8().constData(), ::GetLastError());
       return false;
     }
