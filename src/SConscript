@@ -11,12 +11,13 @@ env.AppendUnique(CPPDEFINES = [
 
 env.AppendUnique(LIBS = 'advapi32')
 
-# If I use ' '.join, somehow or other extra "s get added to the command line
-# and then it goes horribly wrong
+env['MANIFEST_UAC'] =\
+    '/MANIFESTUAC:"' + ' '.join(("level='requireAdministrator'",
+                                 "uiAccess='false'")) + '"'
+
 env.AppendUnique(LINKFLAGS = [
     '/SUBSYSTEM:CONSOLE',
-    '/MANIFESTUAC:"' + ''.join(("level='requireAdministrator'",
-                                "uiAccess='false'")) + '"',
+    '${MANIFEST_UAC}',
     '${EXE_MANIFEST_DEPENDENCY}'
 ])
 
