@@ -18,6 +18,7 @@ along with Mod Organizer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "privileges.h"
+#include "shellapi.h"
 
 #include <QtCore/QCoreApplication>
 #include <QSettings>
@@ -125,6 +126,43 @@ static bool backdateBSAs(const QString &dataPath)
 }
 
 
+static bool adminLaunch(const QString &pid, const QString &executable, const QString &workingDir)
+{
+  #define TIMEOUT_S 30
+
+  DWORD processID = pid.toInt();
+  HANDLE processHandle = ::OpenProcess(PROCESS_QUERY_INFORMATION , FALSE, processID);
+  if (processHandle == NULL) {
+    qCritical("Failed to get process handle for pid %d: errorcode %d", processID, ::GetLastError());
+    return false;
+  }
+
+  DWORD exitCode;
+  time_t t_start = time(nullptr);
+  while (t_start + TIMEOUT_S > time(nullptr)) {
+    if (!GetExitCodeProcess(processHandle, &exitCode)) {
+      qCritical("Failed to get process exit code for pid %d: errorcode %d", processID, ::GetLastError());
+      return false;
+    }
+
+    if (exitCode != STILL_ACTIVE) {
+      if (!::ShellExecuteW(nullptr, L"runas",
+              ToWString(executable).c_str(),
+              L"",
+              ToWString(workingDir).c_str(),
+              SW_SHOWNORMAL)) {
+        qCritical("Failed to launch %s: errorcode %d", executable.toLocal8Bit(), ::GetLastError());
+        return false;
+      }
+      return true;
+    }
+    Sleep(500);
+  }
+
+  return false;
+}
+
+
 int mainDelegate(int argc, wchar_t **argv)
 {
   if (argc < 2) {
@@ -148,6 +186,19 @@ int mainDelegate(int argc, wchar_t **argv)
     qDebug("backdate bsas in %ls", argv[2]);
     if (!backdateBSAs(ToQString(argv[2]))) {
       return -2;
+    }
+  } else if (wcscmp(argv[1], L"adminLaunch") == 0) {
+    if (argc < 5) {
+      qCritical("Invalid number of parameters");
+      return -3;
+    }
+    qDebug("adminLaunch %ls %ls %ls", argv[2], argv[3], argv[4]);
+    if (!adminLaunch(
+          ToQString(argv[2]),
+          ToQString(argv[3]),
+          ToQString(argv[4])
+          )) {
+      return -3;
     }
   } else {
     return -1;
