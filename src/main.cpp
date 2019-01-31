@@ -57,18 +57,18 @@ static bool createMODirectory(const QString &directoryName, const std::wstring &
 {
   if (!QDir(directoryName).exists()) {
     if (!QDir().mkdir(directoryName)) {
-      qCritical("Failed to create \"%s\", do you have the necessary access rights to the installation folder?", directoryName.toUtf8().constData());
+      qCritical("Failed to create \"%s\", do you have the necessary access rights to the installation folder?", qUtf8Printable(directoryName));
       return false;
     }
   }
 
   if (!QFileInfo(directoryName).isDir()) {
-    qCritical("\"%s\" seems to be a regular file", directoryName.toUtf8().constData());
+    qCritical("\"%s\" seems to be a regular file", qUtf8Printable(directoryName));
     return false;
   }
 
   if (!SetOwner(ToWString(directoryName).c_str(), accountName.c_str())) {
-    qCritical("failed to set owner of \"%s\" to \"%ls\"", directoryName.toUtf8().constData(), accountName.c_str());
+    qCritical("failed to set owner of \"%s\" to \"%ls\"", qUtf8Printable(directoryName), accountName.c_str());
     return false;
   }
 
@@ -80,7 +80,7 @@ static bool init(const QString &mopath, const std::wstring &accountName)
 {
   if (!SetOwner(ToWString(mopath).c_str(), accountName.c_str())) {
     qCritical("failed to set owner of \"%s\" to \"%ls\"",
-              mopath.toUtf8().constData(), accountName.c_str());
+              qUtf8Printable(mopath), accountName.c_str());
     return false;
   }
 
