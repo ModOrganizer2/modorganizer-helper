@@ -1,13 +1,9 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.16)
 
-ADD_COMPILE_OPTIONS($<$<CXX_COMPILER_ID:MSVC>:/MP> $<$<CXX_COMPILER_ID:MSVC>:$<$<CONFIG:RELEASE>:/O2>> $<$<CXX_COMPILER_ID:MSVC>:$<$<CONFIG:RELWITHDEBINFO>:/O2>>)
+project(helper)
+set(project_type exe)
+set(enable_warnings OFF)
+set(run_elevated ON)
 
-PROJECT(helper)
-
-SET(DEPENDENCIES_DIR CACHE PATH "")
-SET(QT_ROOT CACHE PATH "")
-
-# hint to find qt in dependencies path
-LIST(APPEND CMAKE_PREFIX_PATH ${QT_ROOT}/lib/cmake)
-
-ADD_SUBDIRECTORY(src)
+include(../cmake_common/project.cmake)
+add_subdirectory(src)
