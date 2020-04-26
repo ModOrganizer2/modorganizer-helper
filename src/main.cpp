@@ -208,12 +208,23 @@ int mainDelegate(int argc, wchar_t **argv)
 }
 
 
-int wmain(int argc, wchar_t **argv)
+int main(int argc, char **argv)
 {
-  int res = mainDelegate(argc, argv);
+  int ws_argc = 0;
+  wchar_t** ws_argv = ::CommandLineToArgvW(GetCommandLineW(), &ws_argc);
+
+  if (!ws_argv) {
+    qDebug("CommandLineToArgvW() failed");
+    return 1;
+  }
+
+  int res = mainDelegate(ws_argc, ws_argv);
   if (res != 0) {
     qDebug("%d", res);
     getchar();
   }
+
+  LocalFree(ws_argv);
+
   return res;
 }
