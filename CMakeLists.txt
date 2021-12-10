@@ -4,6 +4,7 @@ project(helper)
 set(project_type exe)
 set(enable_warnings OFF)
 set(run_elevated ON)
+set(create_translations OFF)
 
 if(DEFINED DEPENDENCIES_DIR)
 	include(${DEPENDENCIES_DIR}/modorganizer_super/cmake_common/project.cmake)
