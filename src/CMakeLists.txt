@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
-if(DEFINED DEPENDENCIES_DIR)
-	include(${DEPENDENCIES_DIR}/modorganizer_super/cmake_common/src.cmake)
-else()
-	include(../../cmake_common/src.cmake)
-endif()
+
+add_executable(helper)
+mo2_configure_executable(helper
+	ELEVATED
+	WARNINGS OFF
+	TRANSLATIONS OFF
+	PRIVATE_DEPENDS Qt::Core)
+mo2_install_target(helper)
