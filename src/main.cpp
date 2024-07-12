@@ -34,9 +34,9 @@ along with Mod Organizer.  If not, see <http://www.gnu.org/licenses/>.
 
 std::wstring ToWString(const QString &source)
 {
-  wchar_t *buffer = new wchar_t[source.count() + 1];
+  wchar_t *buffer = new wchar_t[source.size() + 1];
   source.toWCharArray(buffer);
-  buffer[source.count()] = L'\0';
+  buffer[source.size()] = L'\0';
   std::wstring result(buffer);
   delete [] buffer;
 
@@ -208,7 +208,7 @@ int mainDelegate(int argc, wchar_t **argv)
 }
 
 
-int main(int argc, char **argv)
+int main()
 {
   int ws_argc = 0;
   wchar_t** ws_argv = ::CommandLineToArgvW(GetCommandLineW(), &ws_argc);
