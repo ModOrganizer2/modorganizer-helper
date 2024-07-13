@@ -18,57 +18,34 @@ along with Mod Organizer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "privileges.h"
-#include "shellapi.h"
 
-#include <QtCore/QCoreApplication>
-#include <QSettings>
-#include <QDir>
-#include <QDirIterator>
+#include <shellapi.h>
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
+
+#include <filesystem>
 
 
 #pragma comment(linker, "/manifestDependency:\"name='dlls' processorArchitecture='x86' version='1.0.0.0' type='win32' \"")
 
 
-std::wstring ToWString(const QString &source)
+static bool createMODirectory(const std::filesystem::path& directory, const std::wstring& accountName)
 {
-  wchar_t *buffer = new wchar_t[source.size() + 1];
-  source.toWCharArray(buffer);
-  buffer[source.size()] = L'\0';
-  std::wstring result(buffer);
-  delete [] buffer;
-
-  return result;
-}
-
-QString ToQString(const std::wstring &source)
-{
-#if QT_VERSION >= QT_VERSION_CHECK(5,0,0)
-  return QString::fromWCharArray(source.c_str());
-#else
-  return QString::fromUtf16(source.c_str());
-#endif
-}
-
-
-static bool createMODirectory(const QString &directoryName, const std::wstring &accountName)
-{
-  if (!QDir(directoryName).exists()) {
-    if (!QDir().mkdir(directoryName)) {
-      qCritical("Failed to create \"%s\", do you have the necessary access rights to the installation folder?", qUtf8Printable(directoryName));
+  if (!exists(directory)) {
+    if (!create_directory(directory)) {
+      error(L"Failed to create \"{}\", do you have the necessary access rights to the installation folder?", directory.native());
       return false;
     }
   }
 
-  if (!QFileInfo(directoryName).isDir()) {
-    qCritical("\"%s\" seems to be a regular file", qUtf8Printable(directoryName));
+  if (!is_directory(directory)) {
+    error(L"\"{}\" seems to be a regular file", directory.native());
     return false;
   }
 
-  if (!SetOwner(ToWString(directoryName).c_str(), accountName.c_str())) {
-    qCritical("failed to set owner of \"%s\" to \"%ls\"", qUtf8Printable(directoryName), accountName.c_str());
+  if (!SetOwner(directory.c_str(), accountName.c_str())) {
+    error(L"failed to set owner of \"{}\" to \"{}\"", directory.native(), accountName.c_str());
     return false;
   }
 
@@ -76,34 +53,34 @@ static bool createMODirectory(const QString &directoryName, const std::wstring &
 }
 
 
-static bool init(const QString &mopath, const std::wstring &accountName)
+static bool init(const std::filesystem::path& mopath, const std::wstring& accountName)
 {
-  if (!SetOwner(ToWString(mopath).c_str(), accountName.c_str())) {
-    qCritical("failed to set owner of \"%s\" to \"%ls\"",
-              qUtf8Printable(mopath), accountName.c_str());
+  if (!SetOwner(mopath.c_str(), accountName.c_str())) {
+    error(L"failed to set owner of \"{}\" to \"{}\"", mopath.native(), accountName.c_str());
     return false;
   }
 
-  if (!createMODirectory(mopath.mid(0).append("\\profiles"), accountName) ||
-      !createMODirectory(mopath.mid(0).append("\\mods"), accountName) ||
-      !createMODirectory(mopath.mid(0).append("\\downloads"), accountName)) {
+  if (!createMODirectory(mopath / "profiles", accountName) ||
+    !createMODirectory(mopath / "mods", accountName) ||
+    !createMODirectory(mopath / "downloads", accountName)) {
     return false;
   }
   return true;
 }
 
 
-static bool backdateBSAs(const QString &dataPath)
+static bool backdateBSAs(const std::filesystem::path& dataPath)
 {
-  QStringList bsaFilter("*.bsa");
-  QDirIterator iter(dataPath, bsaFilter, QDir::Files);
-  while (iter.hasNext()) {
-    iter.next();
+  for (auto& entry : std::filesystem::directory_iterator{ dataPath }) {
+    const auto& path = entry.path();
+    if (path.extension() != ".bsa") {
+      continue;
+    }
 
-    HANDLE file = ::CreateFileW(ToWString(iter.filePath()).c_str(), GENERIC_READ | GENERIC_WRITE,
-                               0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+    HANDLE file = ::CreateFileW(path.c_str(), GENERIC_READ | GENERIC_WRITE,
+      0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (file == INVALID_HANDLE_VALUE) {
-      qCritical("failed to open %s: errorcode %d", iter.filePath().toUtf8().constData(), ::GetLastError());
+      error(L"failed to open {}: errorcode {}", path.c_str(), ::GetLastError());
       return false;
     }
 
@@ -112,11 +89,11 @@ static bool backdateBSAs(const QString &dataPath)
 
     FILETIME newWriteTime;
 
-    newWriteTime.dwLowDateTime  = (DWORD)(temp & 0xFFFFFFFF);
+    newWriteTime.dwLowDateTime = (DWORD)(temp & 0xFFFFFFFF);
     newWriteTime.dwHighDateTime = (DWORD)(temp >> 32);
 
     if (!::SetFileTime(file, nullptr, nullptr, &newWriteTime)) {
-      qCritical("failed to change date for %s: errorcode %d", iter.filePath().toUtf8().constData(), ::GetLastError());
+      error(L"failed to change date for {}: errorcode {}", path.c_str(), ::GetLastError());
       return false;
     }
 
@@ -126,14 +103,13 @@ static bool backdateBSAs(const QString &dataPath)
 }
 
 
-static bool adminLaunch(const QString &pid, const QString &executable, const QString &workingDir)
+static bool adminLaunch(DWORD processID, const std::filesystem::path& executable, const std::filesystem::path& workingDir)
 {
-  #define TIMEOUT_S 30
+#define TIMEOUT_S 30
 
-  DWORD processID = pid.toInt();
-  HANDLE processHandle = ::OpenProcess(PROCESS_QUERY_INFORMATION , FALSE, processID);
+  HANDLE processHandle = ::OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, processID);
   if (processHandle == NULL) {
-    qCritical("Failed to get process handle for pid %d: errorcode %d", processID, ::GetLastError());
+    error(L"Failed to get process handle for pid {}: errorcode {}", processID, ::GetLastError());
     return false;
   }
 
@@ -141,17 +117,17 @@ static bool adminLaunch(const QString &pid, const QString &executable, const QSt
   time_t t_start = time(nullptr);
   while (t_start + TIMEOUT_S > time(nullptr)) {
     if (!GetExitCodeProcess(processHandle, &exitCode)) {
-      qCritical("Failed to get process exit code for pid %d: errorcode %d", processID, ::GetLastError());
+      error(L"Failed to get process exit code for pid {}: errorcode {}", processID, ::GetLastError());
       return false;
     }
 
     if (exitCode != STILL_ACTIVE) {
       if (!::ShellExecuteW(nullptr, L"runas",
-              ToWString(executable).c_str(),
-              L"",
-              ToWString(workingDir).c_str(),
-              SW_SHOWNORMAL)) {
-        qCritical("Failed to launch %s: errorcode %d", executable.toLocal8Bit(), ::GetLastError());
+        executable.c_str(),
+        L"",
+        workingDir.c_str(),
+        SW_SHOWNORMAL)) {
+        error(L"Failed to launch {}: errorcode {}", executable.c_str(), ::GetLastError());
         return false;
       }
       return true;
@@ -163,44 +139,43 @@ static bool adminLaunch(const QString &pid, const QString &executable, const QSt
 }
 
 
-int mainDelegate(int argc, wchar_t **argv)
+int mainDelegate(int argc, wchar_t** argv)
 {
   if (argc < 2) {
-    qCritical("Invalid number of parameters");
+    error(L"Invalid number of parameters");
     return -1;
   }
 
-  qDebug("action: %ls", argv[1]);
+  debug(L"action: {}", argv[1]);
 
   if (wcscmp(argv[1], L"init") == 0) {
     if (argc < 4) {
-      qCritical("Invalid number of parameters");
+      error(L"Invalid number of parameters");
       return -1;
     }
-    qDebug("init: %ls - %ls", argv[2], argv[3]);
+    debug(L"init: {} - {}", argv[2], argv[3]);
     // set up mod organizer directory
-    if (!init(ToQString(argv[2]), argv[3])) {
+    if (!init(argv[2], argv[3])) {
       return -2;
     }
-  } else if (wcscmp(argv[1], L"backdateBSA") == 0) {
-    qDebug("backdate bsas in %ls", argv[2]);
-    if (!backdateBSAs(ToQString(argv[2]))) {
+  }
+  else if (wcscmp(argv[1], L"backdateBSA") == 0) {
+    debug(L"backdate bsas in {}", argv[2]);
+    if (!backdateBSAs(argv[2])) {
       return -2;
     }
-  } else if (wcscmp(argv[1], L"adminLaunch") == 0) {
+  }
+  else if (wcscmp(argv[1], L"adminLaunch") == 0) {
     if (argc < 5) {
-      qCritical("Invalid number of parameters");
+      error(L"Invalid number of parameters");
       return -3;
     }
-    qDebug("adminLaunch %ls %ls %ls", argv[2], argv[3], argv[4]);
-    if (!adminLaunch(
-          ToQString(argv[2]),
-          ToQString(argv[3]),
-          ToQString(argv[4])
-          )) {
+    debug(L"adminLaunch {} {} {}", argv[2], argv[3], argv[4]);
+    if (!adminLaunch(std::stoi(argv[2]), argv[3], argv[4])) {
       return -3;
     }
-  } else {
+  }
+  else {
     return -1;
   }
 
@@ -208,19 +183,19 @@ int mainDelegate(int argc, wchar_t **argv)
 }
 
 
-int main()
+int main(int, char* [])
 {
   int ws_argc = 0;
   wchar_t** ws_argv = ::CommandLineToArgvW(GetCommandLineW(), &ws_argc);
 
   if (!ws_argv) {
-    qDebug("CommandLineToArgvW() failed");
+    error(L"CommandLineToArgvW() failed");
     return 1;
   }
 
   int res = mainDelegate(ws_argc, ws_argv);
   if (res != 0) {
-    qDebug("%d", res);
+    error(L"{}", res);
     getchar();
   }
 

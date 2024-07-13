@@ -14,8 +14,7 @@
         "dev": true
       },
       "cacheVariables": {
-        "CMAKE_CXX_FLAGS": "/EHsc /MP /W4 /external:anglebrackets /external:W0",
-        "LINK_FLAGS_RELWITHDEBINFO": "/LTCG /INCREMENTAL:NO /OPT:REF /OPT:ICF"
+        "CMAKE_CXX_FLAGS": "/EHsc /MP /W4 /external:anglebrackets /external:W0"
       },
       "generator": "Visual Studio 17 2022",
       "name": "vs2022-windows",
