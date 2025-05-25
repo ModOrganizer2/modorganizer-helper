@@ -23,19 +23,21 @@ along with Mod Organizer.  If not, see <http://www.gnu.org/licenses/>.
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-#include <iostream>
 #include <format>
+#include <iostream>
 
 template <class... Args>
-void error(std::wformat_string<Args... > format, Args&& ...args) {
+void error(std::wformat_string<Args...> format, Args&&... args)
+{
   std::wcerr << std::format(format, std::forward<Args>(args)...) << L'\n';
 }
 
 template <class... Args>
-void debug(std::wformat_string<Args... > format, Args&& ...args) {
+void debug(std::wformat_string<Args...> format, Args&&... args)
+{
   std::wcout << std::format(format, std::forward<Args>(args)...) << L'\n';
 }
 
 BOOL SetOwner(LPCTSTR filename, LPCTSTR newowner);
 
-#endif // PRIVILEGES_H
+#endif  // PRIVILEGES_H

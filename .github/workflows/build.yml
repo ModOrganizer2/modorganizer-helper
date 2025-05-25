@@ -1,0 +1,30 @@
+name: Build MO2 Helper
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  build:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure Helper
+        shell: pwsh
+        run: |
+          cmake --preset vs2022-windows "-DCMAKE_INSTALL_PREFIX=install"
+
+      - name: Build Helper
+        run: cmake --build vsbuild --config RelWithDebInfo
+
+      - name: Install Helper
+        run: cmake --install vsbuild --config RelWithDebInfo
+
+      - name: Upload Helper artifact
+        uses: actions/upload-artifact@master
+        with:
+          name: Helper
+          path: ./install
